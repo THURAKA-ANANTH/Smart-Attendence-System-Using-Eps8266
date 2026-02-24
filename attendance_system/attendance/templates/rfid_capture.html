@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFID Student Capture</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"], input[type="email"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #newStudentForm {
+      display: none;
+      margin-top: 20px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+
+    .info-box {
+      background: #e0f7e0;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      color: #2d7a2d;
+    }
+
+    .alert-box {
+      background: #ffe0e0;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      color: #a32d2d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>RFID Student Capture</h2>
+
+    <!-- Capture button -->
+    <button id="captureBtn">Capture RFID</button>
+
+    <!-- Info if student already exists -->
+    <div id="studentInfo" class="info-box" style="display:none;">
+      <p><strong>Name:</strong> <span id="name"></span></p>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Roll Number:</strong> <span id="roll_number"></span></p>
+      <p><strong>Classroom:</strong> <span id="classroom"></span></p>
+    </div>
+
+    <!-- Form for new student -->
+    <div id="newStudentForm">
+      <p class="alert-box">This RFID is not mapped yet. Please fill student details:</p>
+      <form id="createStudentForm">
+        <input type="hidden" id="rfid_uid">
+        <div class="form-group">
+          <label for="new_name">Name</label>
+          <input type="text" id="new_name" required>
+        </div>
+        <div class="form-group">
+          <label for="new_email">Email</label>
+          <input type="email" id="new_email" required>
+        </div>
+        <div class="form-group">
+          <label for="new_roll">Roll Number</label>
+          <input type="text" id="new_roll" required>
+        </div>
+        <div class="form-group">
+          <label for="new_classroom">Classroom</label>
+          <input type="text" id="new_classroom" required>
+        </div>
+        <button type="submit">Save Student</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Capture button click
+    document.getElementById('captureBtn').addEventListener('click', async function() {
+      // Here, normally you would get RFID UID from ESP hardware
+      // For demo/testing, you can prompt manually:
+      const rfid_uid = prompt("Scan RFID or enter UID:");
+
+      if (!rfid_uid) return alert("No RFID UID provided");
+
+      // Call your API
+      const response = await fetch('/api/capture_rfid/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rfid_uid })
+      });
+
+      const data = await response.json();
+
+      // Hide everything initially
+      document.getElementById('studentInfo').style.display = 'none';
+      document.getElementById('newStudentForm').style.display = 'none';
+
+      if (data.mapped) {
+        // Show student info
+        document.getElementById('name').innerText = data.name;
+        document.getElementById('email').innerText = data.email;
+        document.getElementById('roll_number').innerText = data.roll_number;
+        document.getElementById('classroom').innerText = data.classroom;
+        document.getElementById('studentInfo').style.display = 'block';
+      } else {
+        // Show new student form
+        document.getElementById('rfid_uid').value = data.rfid_uid;
+        document.getElementById('newStudentForm').style.display = 'block';
+      }
+    });
+
+    // Form submission for new student
+    document.getElementById('createStudentForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const payload = {
+        rfid_uid: document.getElementById('rfid_uid').value,
+        name: document.getElementById('new_name').value,
+        email: document.getElementById('new_email').value,
+        roll_number: document.getElementById('new_roll').value,
+        classroom: document.getElementById('new_classroom').value,
+      };
+      const res = await fetch('/api/create_student/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if(result.success){
+        alert('Student created successfully!');
+        document.getElementById('newStudentForm').style.display = 'none';
+      } else {
+        alert('Error creating student!');
+      }
+    });
+  </script>
+</body>
+</html>
