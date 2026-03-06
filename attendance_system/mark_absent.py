@@ -9,7 +9,7 @@ django.setup()
 
 from attendance.models import Timetable, Attendance, Student
 
-GRACE_PERIOD_MINUTES = 5  # grace period
+GRACE_PERIOD_MINUTES = 1  # grace period
 
 def mark_attendance_for_current_period():
     now = timezone.localtime()

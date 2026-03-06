@@ -10,7 +10,7 @@ django.setup()
 from django.core.mail import send_mail
 from attendance.models import Attendance
 
-CHECK_INTERVAL = 60 * 5  # 5 minutes
+CHECK_INTERVAL = 60 * 1  # 5 minutes
 
 def send_absent_emails():
     today = timezone.localdate()
@@ -28,15 +28,26 @@ def send_absent_emails():
         student = record.student
 
         subject = f"Attendance Alert: You were absent on {today}"
+        timetable = record.timetable
+
         message = f"""
-Hello {student.name},
+        Hello {student.name},
 
-You were marked absent for {record.timetable} on {today}.
-Please make sure to attend the next class.
+        You were marked absent for:
 
-Best regards,
-Narayana Engineering College
-"""
+        Class: {timetable.classroom.name}
+        Subject: {timetable.subject.name}
+        Faculty: {timetable.faculty.name}
+
+        Period: {timetable.period_number}
+        Time: {timetable.start_time.strftime('%I:%M %p')} - {timetable.end_time.strftime('%I:%M %p')}
+        Date: {today}
+
+        Please attend the next class.
+
+        Best regards,
+        Narayana Engineering College
+        """
         recipient = [student.email]
         try:
             send_mail(subject, message, None, recipient, fail_silently=False)
